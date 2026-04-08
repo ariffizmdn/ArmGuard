@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ArmGuard Live Monitor</title>
+  
+  <!-- Tailwind CSS for Styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans p-4 md:p-8 min-h-screen">
+
+  <!-- Header -->
+  <header class="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div class="flex items-center gap-3">
+      <div class="bg-blue-600 p-3 rounded-lg text-white">
+        <i data-lucide="hard-hat" class="w-8 h-8"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">ArmGuard Central</h1>
+        <p class="text-sm text-slate-500 font-medium">Site Manager Dashboard</p>
+      </div>
+    </div>
+
+    <!-- Status Badge -->
+    <div id="status-badge" class="flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-sm bg-red-100 text-red-700">
+      <i id="status-icon" data-lucide="wifi-off" class="w-5 h-5"></i>
+      <span id="status-text">Disconnected / Waiting</span>
+    </div>
+  </header>
+
+  <!-- Main Grid -->
+  <main class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    
+    <!-- Worker Info Card -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+      <div class="flex items-center gap-3 mb-4 text-slate-500">
+        <i data-lucide="user" class="w-5 h-5"></i>
+        <h2 class="font-semibold uppercase tracking-wider text-sm">Worker Profile</h2>
+      </div>
+      <div class="flex-1">
+        <select id="worker-select" class="text-2xl font-bold text-slate-800 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg px-3 py-1 mb-2 cursor-pointer outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+          <option value="W001">ID: W001</option>
+          <option value="W002">ID: W002</option>
+          <option value="W003">ID: W003</option>
+          <option value="W004">ID: W004</option>
+          <option value="W005">ID: W005</option>
+        </select>
+        <p class="text-slate-500">Zone: Alpha Sector</p>
+      </div>
+      <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-sm text-slate-500">
+        <span class="flex items-center gap-1"><i data-lucide="clock" class="w-4 h-4"></i> Last Sync</span>
+        <span id="time-value" class="font-mono">--:--:--</span>
+      </div>
+    </div>
+
+    <!-- Heart Rate Card -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+      <div class="flex items-center gap-3 mb-4 text-rose-500">
+        <i id="hr-icon" data-lucide="heart-pulse" class="w-5 h-5"></i>
+        <h2 class="font-semibold uppercase tracking-wider text-sm">Heart Rate</h2>
+      </div>
+      <div class="flex-1 flex items-end gap-2">
+        <p id="hr-value" class="text-5xl font-bold text-slate-800">--</p>
+        <p class="text-slate-500 mb-1 font-medium">BPM</p>
+      </div>
+      <div id="hr-status" class="mt-4 pt-4 border-t border-slate-100">
+         <p class="text-sm text-slate-400">Awaiting sensor data...</p>
+      </div>
+    </div>
+
+    <!-- Location Card -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:col-span-2 lg:col-span-1">
+      <div class="flex items-center gap-3 mb-4 text-blue-500">
+        <i data-lucide="map-pin" class="w-5 h-5"></i>
+        <h2 class="font-semibold uppercase tracking-wider text-sm">GPS Location</h2>
+      </div>
+      
+      <div class="flex-1 space-y-3">
+        <div>
+          <p class="text-xs text-slate-400 uppercase font-semibold mb-1">Latitude</p>
+          <p id="lat-value" class="text-lg font-mono text-slate-800">--.------</p>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400 uppercase font-semibold mb-1">Longitude</p>
+          <p id="lng-value" class="text-lg font-mono text-slate-800">---.------</p>
+        </div>
+      </div>
+
+      <button id="map-btn" disabled class="mt-6 w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold transition-colors bg-slate-100 text-slate-400 cursor-not-allowed">
+        <i data-lucide="external-link" class="w-5 h-5"></i>
+        Open in Google Maps
+      </button>
+    </div>
+
+  </main>
+
+  <script>
+    // Initialize Icons
+    lucide.createIcons();
+
+    // Initialize Firebase Database
+    const firebaseConfig = {
+      apiKey: "AIzaSyCghIiXTJBovdmhlPNAktm5ufJlZ8zVlAg",
+      databaseURL: "https://smart-wearable-test1-default-rtdb.asia-southeast1.firebasedatabase.app"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // App State
+    let currentWorker = "W001";
+    let dataListener = null;
+    let timeoutTimer = null;
+    let workerLat = null;
+    let workerLng = null;
+
+    // UI Elements
+    const workerSelect = document.getElementById('worker-select');
+    const statusBadge = document.getElementById('status-badge');
+    const statusIcon = document.getElementById('status-icon');
+    const statusText = document.getElementById('status-text');
+    const hrValue = document.getElementById('hr-value');
+    const hrStatus = document.getElementById('hr-status');
+    const hrIcon = document.getElementById('hr-icon');
+    const latValue = document.getElementById('lat-value');
+    const lngValue = document.getElementById('lng-value');
+    const mapBtn = document.getElementById('map-btn');
+    const timeValue = document.getElementById('time-value');
+
+    function updateConnectionStatus(isConnected) {
+      if (isConnected) {
+        statusBadge.className = "flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-sm bg-green-100 text-green-700";
+        statusIcon.setAttribute('data-lucide', 'wifi');
+        statusText.innerText = "Live Connection";
+      } else {
+        statusBadge.className = "flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-sm bg-red-100 text-red-700";
+        statusIcon.setAttribute('data-lucide', 'wifi-off');
+        statusText.innerText = "Disconnected / Waiting";
+      }
+      lucide.createIcons();
+    }
+
+    function clearData() {
+      hrValue.innerText = "--";
+      hrStatus.innerHTML = '<p class="text-sm text-slate-400">Awaiting sensor data...</p>';
+      hrIcon.classList.remove("animate-pulse");
+      latValue.innerText = "--.------";
+      lngValue.innerText = "---.------";
+      timeValue.innerText = "--:--:--";
+      mapBtn.disabled = true;
+      mapBtn.className = "mt-6 w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold transition-colors bg-slate-100 text-slate-400 cursor-not-allowed";
+      workerLat = null;
+      workerLng = null;
+      updateConnectionStatus(false);
+    }
+
+    function listenToWorker(workerId) {
+      // Clean up previous listener
+      if (dataListener) {
+        db.ref(`workers/${currentWorker}`).off('value', dataListener);
+      }
+      clearData();
+      if (timeoutTimer) clearInterval(timeoutTimer);
+
+      let lastDataTime = 0;
+
+      // Watchdog timer (15 seconds)
+      timeoutTimer = setInterval(() => {
+        if (lastDataTime > 0 && (Date.now() - lastDataTime) > 15000) {
+          updateConnectionStatus(false);
+        }
+      }, 5000);
+
+      // Start new listener
+      currentWorker = workerId;
+      dataListener = db.ref(`workers/${workerId}`).on('value', (snapshot) => {
+        const data = snapshot.val();
+        
+        if (data) {
+          lastDataTime = Date.now();
+          updateConnectionStatus(true);
+          timeValue.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+          // Update Heart Rate
+          if (data.sensors && data.sensors.heartRate !== undefined) {
+            const hr = data.sensors.heartRate;
+            hrValue.innerText = hr;
+            hrIcon.classList.add("animate-pulse");
+            
+            if (hr > 100) {
+              hrStatus.innerHTML = `<p class="text-sm font-medium text-amber-600 flex items-center gap-1"><i data-lucide="activity" class="w-4 h-4"></i> Elevated Heart Rate</p>`;
+            } else {
+              hrStatus.innerHTML = `<p class="text-sm font-medium text-green-600 flex items-center gap-1"><i data-lucide="activity" class="w-4 h-4"></i> Normal Range</p>`;
+            }
+            lucide.createIcons();
+          }
+
+          // Update Location
+          if (data.location && data.location.lat && data.location.lng) {
+            workerLat = data.location.lat;
+            workerLng = data.location.lng;
+            latValue.innerText = workerLat.toFixed(6);
+            lngValue.innerText = workerLng.toFixed(6);
+            
+            mapBtn.disabled = false;
+            mapBtn.className = "mt-6 w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-md shadow-blue-200";
+          }
+        } else {
+          updateConnectionStatus(false);
+        }
+      });
+    }
+
+    // Dropdown change event
+    workerSelect.addEventListener('change', (e) => {
+      listenToWorker(e.target.value);
+    });
+
+    // Map button click event
+    mapBtn.addEventListener('click', () => {
+      if (workerLat && workerLng) {
+        window.open(`https://www.google.com/maps?q=${workerLat},${workerLng}`, '_blank');
+      }
+    });
+
+    // Start listening to W001 on load
+    listenToWorker(currentWorker);
+  </script>
+</body>
+</html>
