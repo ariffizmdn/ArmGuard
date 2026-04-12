@@ -351,7 +351,8 @@
   let watchdog      = null;
   let lastDataTs    = 0;
   let workerLat     = null;
-  let workerLng     = null;
+  let workerLng          = null;
+  let fallAlertDismissed = false; // cleared only by Reset Fall or worker switch
 
   // ── BPM Chart ─────────────────────────────────────────────
   const MAX_BPM_POINTS = 30;
@@ -549,11 +550,10 @@
       lastDataTs = Date.now();
       setConnectionStatus(true);
 
-      // Fall detection
-      if (d.fall === 1) {
+      // Fall detection — only show the alert, never auto-hide.
+      // The banner stays until the user clicks Reset or Dismiss.
+      if (d.fall === 1 && !fallAlertDismissed) {
         showFallAlert(workerId);
-      } else {
-        hideFallAlert();
       }
 
       // Timestamp
@@ -667,7 +667,8 @@
     if (gpsListener)  db.ref(`workers/${currentWorker}/history/gps`).off('value', gpsListener);
     if (watchdog)     clearInterval(watchdog);
 
-    currentWorker = workerId;
+    currentWorker      = workerId;
+    fallAlertDismissed = false; // new worker — allow alerts again
     clearAll();
     hideFallAlert();
 
@@ -688,11 +689,21 @@
       window.open(`https://www.google.com/maps?q=${workerLat},${workerLng}`, '_blank');
   });
 
-  document.getElementById('dismiss-alert').addEventListener('click', hideFallAlert);
+  // Dismiss: hides the banner but does NOT clear Firebase.
+  // The alert won't re-appear until the next worker switch.
+  document.getElementById('dismiss-alert').addEventListener('click', () => {
+    fallAlertDismissed = true;
+    hideFallAlert();
+  });
 
+  // Reset Fall: clears Firebase fall flag AND hides the banner.
+  // fallAlertDismissed stays false so a future fall can show again.
   document.getElementById('reset-fall').addEventListener('click', () => {
     db.ref(`workers/${currentWorker}/fall`).set(0)
-      .then(() => hideFallAlert())
+      .then(() => {
+        fallAlertDismissed = false;
+        hideFallAlert();
+      })
       .catch(err => console.error('Failed to reset fall:', err));
   });
 
