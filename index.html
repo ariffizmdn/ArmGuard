@@ -223,6 +223,29 @@
       </select>
     </div>
   </header>
+  <!-- FALL ALERT BANNER -->
+<div id="fall-alert"
+  class="max-w-6xl mx-auto mb-4 hidden items-center justify-between gap-4 px-5 py-4 rounded-2xl border border-red-500/30 bg-red-500/10 backdrop-blur-md fade-up">
+
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
+      <i data-lucide="triangle-alert" class="w-5 h-5 text-red-400"></i>
+    </div>
+
+    <div>
+      <p class="text-sm font-bold text-red-400 tracking-wide">EMERGENCY ALERT</p>
+      <p class="text-sm text-zinc-200">
+        Worker <span id="fall-worker-id" class="mono font-semibold text-white">--</span>
+        fall detected.
+      </p>
+    </div>
+  </div>
+
+  <button id="dismiss-alert"
+    class="text-xs font-semibold px-3 py-2 rounded-lg bg-red-500 text-white hover:opacity-90 transition">
+    Dismiss
+  </button>
+</div>
 
   <!-- ── Main grid ───────────────────────────────────────────── -->
   <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 relative z-10">
@@ -488,7 +511,23 @@
     el.className = `text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[status] || STATUS_BADGE.unknown}`;
     el.textContent = status ? status.charAt(0).toUpperCase() + status.slice(1) : '--';
   }
+function showFallAlert(workerId) {
+  const alertBox = document.getElementById('fall-alert');
+  const workerEl = document.getElementById('fall-worker-id');
 
+  workerEl.textContent = workerId;
+  alertBox.classList.remove('hidden');
+  alertBox.classList.add('flex');
+
+  // optional browser vibration (mobile)
+  if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
+}
+
+function hideFallAlert() {
+  const alertBox = document.getElementById('fall-alert');
+  alertBox.classList.add('hidden');
+  alertBox.classList.remove('flex');
+}
   function clearAll() {
     document.getElementById('hr-value').textContent = '--';
     document.getElementById('hr-value').classList.remove('bpm-pulse');
@@ -530,6 +569,12 @@
   function listenMain(workerId) {
     return db.ref(`workers/${workerId}`).on('value', snap => {
       const d = snap.val();
+      // FALL ALERT
+if (d?.fall === 1) {
+  showFallAlert(workerId);
+} else {
+  hideFallAlert();
+}
       if (!d) { setConnectionStatus(false); return; }
 
       lastDataTs = Date.now();
@@ -670,7 +715,7 @@
   document.getElementById('worker-select').addEventListener('change', e => {
     listenToWorker(e.target.value);
   });
-
+document.getElementById('dismiss-alert').addEventListener('click', hideFallAlert);
   // ── Boot ─────────────────────────────────────────────────
   listenToWorker(currentWorker);
   </script>
