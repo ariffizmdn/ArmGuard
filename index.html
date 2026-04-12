@@ -5,25 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ArmGuard Live Monitor</title>
 
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-
-  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
-  <!-- Leaflet CSS + JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
@@ -48,7 +40,6 @@
 
     .mono { font-family: 'DM Mono', monospace; }
 
-    /* Grain overlay */
     body::before {
       content: '';
       position: fixed;
@@ -76,7 +67,6 @@
       background: linear-gradient(90deg, var(--accent), transparent);
     }
 
-    /* Status indicator dot */
     .pulse-dot {
       width: 8px; height: 8px;
       border-radius: 50%;
@@ -95,14 +85,12 @@
       100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
     }
 
-    /* BPM number pulse animation */
     @keyframes bpmPulse {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.7; transform: scale(0.97); }
     }
     .bpm-pulse { animation: bpmPulse 0.8s ease-in-out infinite; }
 
-    /* Status colors */
     .status-normal   { color: var(--normal); }
     .status-elevated { color: var(--elevated); }
     .status-critical { color: var(--critical); }
@@ -115,7 +103,6 @@
     .badge-low      { background:#1e3a5f; color:#60a5fa; }
     .badge-unknown  { background:#27272a; color:#71717a; }
 
-    /* Map container */
     #map {
       height: 280px;
       border-radius: 10px;
@@ -123,10 +110,8 @@
     }
     .leaflet-container { background: #0f0f11 !important; }
 
-    /* Chart container */
     .chart-wrap { position: relative; height: 200px; }
 
-    /* Worker select */
     .worker-select {
       background: #27272a;
       border: 1px solid #3f3f46;
@@ -142,7 +127,6 @@
     .worker-select:focus { border-color: var(--accent); }
     .worker-select option { background: #18181b; }
 
-    /* Section label */
     .section-label {
       font-size: 0.65rem;
       font-weight: 700;
@@ -151,12 +135,10 @@
       color: #52525b;
     }
 
-    /* Scrollbar */
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: #0f0f11; }
     ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 2px; }
 
-    /* Map GPS marker pulse */
     .gps-marker-dot {
       width: 16px; height: 16px;
       background: var(--accent);
@@ -166,7 +148,6 @@
       animation: ping 2s ease-out infinite;
     }
 
-    /* Fade in on load */
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(16px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -182,9 +163,7 @@
     tailwind.config = {
       theme: {
         extend: {
-          colors: {
-            zinc: { 950: '#09090b' }
-          }
+          colors: { zinc: { 950: '#09090b' } }
         }
       }
     }
@@ -193,7 +172,7 @@
 
 <body class="p-4 md:p-6 relative">
 
-  <!-- ── Header ─────────────────────────────────────────────── -->
+  <!-- Header -->
   <header class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 fade-up">
     <div class="flex items-center gap-3">
       <div style="background:var(--accent)" class="p-2.5 rounded-xl">
@@ -208,12 +187,10 @@
     </div>
 
     <div class="flex items-center gap-3">
-      <!-- Connection badge -->
       <div id="conn-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border border-zinc-700 text-zinc-400">
         <span class="pulse-dot dead" id="conn-dot"></span>
         <span id="conn-text">Waiting…</span>
       </div>
-      <!-- Worker select -->
       <select class="worker-select" id="worker-select">
         <option value="W001">W001</option>
         <option value="W002">W002</option>
@@ -223,60 +200,35 @@
       </select>
     </div>
   </header>
-  <!-- FALL ALERT BANNER -->
-<div id="fall-alert"
-  class="max-w-6xl mx-auto mb-4 hidden items-center justify-between gap-4 px-5 py-4 rounded-2xl border border-red-500/30 bg-red-500/10 backdrop-blur-md fade-up">
 
-  <div class="flex items-center gap-3">
-    <div class="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
-      <i data-lucide="triangle-alert" class="w-5 h-5 text-red-400"></i>
+  <!-- Fall Alert Banner (single, correct definition) -->
+  <div id="fall-alert"
+    class="max-w-6xl mx-auto mb-4 hidden items-center justify-between gap-4 px-5 py-4 rounded-2xl border border-red-500/30 bg-red-500/10 backdrop-blur-md fade-up">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
+        <i data-lucide="triangle-alert" class="w-5 h-5 text-red-400"></i>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-red-400 tracking-wide">EMERGENCY ALERT</p>
+        <p class="text-sm text-zinc-200">
+          Worker <span id="fall-worker-id" class="mono font-semibold text-white">--</span>
+          fall detected.
+        </p>
+      </div>
     </div>
-
-    <div>
-      <p class="text-sm font-bold text-red-400 tracking-wide">EMERGENCY ALERT</p>
-      <p class="text-sm text-zinc-200">
-        Worker <span id="fall-worker-id" class="mono font-semibold text-white">--</span>
-        fall detected.
-      </p>
-    </div>
-  </div>
-
-  <button id="dismiss-alert"
-    class="text-xs font-semibold px-3 py-2 rounded-lg bg-red-500 text-white hover:opacity-90 transition">
-    Dismiss
-  </button>
-</div>
-  <!-- FALL ALERT BANNER -->
-<div id="fall-alert"
-  class="max-w-6xl mx-auto mb-4 hidden items-center justify-between gap-4 px-5 py-4 rounded-2xl border border-red-500/30 bg-red-500/10 backdrop-blur-md fade-up">
-
-  <div class="flex items-center gap-3">
-    <div class="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
-      <i data-lucide="triangle-alert" class="w-5 h-5 text-red-400"></i>
-    </div>
-
-    <div>
-      <p class="text-sm font-bold text-red-400 tracking-wide">EMERGENCY ALERT</p>
-      <p class="text-sm text-zinc-200">
-        Worker <span id="fall-worker-id" class="mono font-semibold text-white">--</span>
-        fall detected.
-      </p>
+    <div class="flex items-center gap-2">
+      <button id="reset-fall"
+        class="text-xs font-semibold px-3 py-2 rounded-lg bg-red-600 text-white hover:opacity-90 transition">
+        Reset Fall
+      </button>
+      <button id="dismiss-alert"
+        class="text-xs font-semibold px-3 py-2 rounded-lg bg-zinc-700 text-white hover:opacity-90 transition">
+        Dismiss
+      </button>
     </div>
   </div>
 
- <div class="flex items-center gap-2">
-  <button id="reset-fall"
-    class="text-xs font-semibold px-3 py-2 rounded-lg bg-red-600 text-white hover:opacity-90 transition">
-    Reset Fall
-  </button>
-
-  <button id="dismiss-alert"
-    class="text-xs font-semibold px-3 py-2 rounded-lg bg-zinc-700 text-white hover:opacity-90 transition">
-    Dismiss
-  </button>
-</div>
-// 
-  <!-- ── Main grid ───────────────────────────────────────────── -->
+  <!-- Main grid -->
   <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 relative z-10">
 
     <!-- BPM Live Card -->
@@ -381,9 +333,7 @@
   </main>
 
   <script>
-  // ══════════════════════════════════════════════════════════
-  //  Firebase init — replace with YOUR config
-  // ══════════════════════════════════════════════════════════
+  // ── Firebase init ─────────────────────────────────────────
   const firebaseConfig = {
     apiKey: "AIzaSyCghIiXTJBovdmhlPNAktm5ufJlZ8zVlAg",
     databaseURL: "https://smart-wearable-test1-default-rtdb.asia-southeast1.firebasedatabase.app"
@@ -393,9 +343,7 @@
 
   lucide.createIcons();
 
-  // ══════════════════════════════════════════════════════════
-  //  State
-  // ══════════════════════════════════════════════════════════
+  // ── State ─────────────────────────────────────────────────
   let currentWorker = "W001";
   let mainListener  = null;
   let bpmListener   = null;
@@ -442,9 +390,7 @@
           titleColor: '#a1a1aa',
           bodyColor: '#f97316',
           bodyFont: { family: 'DM Mono', size: 14, weight: '500' },
-          callbacks: {
-            label: ctx => `${ctx.parsed.y} BPM`
-          }
+          callbacks: { label: ctx => `${ctx.parsed.y} BPM` }
         }
       },
       scales: {
@@ -519,10 +465,10 @@
     const dot  = document.getElementById('conn-dot');
     const text = document.getElementById('conn-text');
     if (live) {
-      dot.className  = 'pulse-dot live';
+      dot.className    = 'pulse-dot live';
       text.textContent = 'Live';
     } else {
-      dot.className  = 'pulse-dot dead';
+      dot.className    = 'pulse-dot dead';
       text.textContent = 'Waiting…';
     }
   }
@@ -540,23 +486,23 @@
     el.className = `text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[status] || STATUS_BADGE.unknown}`;
     el.textContent = status ? status.charAt(0).toUpperCase() + status.slice(1) : '--';
   }
-function showFallAlert(workerId) {
-  const alertBox = document.getElementById('fall-alert');
-  const workerEl = document.getElementById('fall-worker-id');
 
-  workerEl.textContent = workerId;
-  alertBox.classList.remove('hidden');
-  alertBox.classList.add('flex');
+  // ── Fall alert helpers ────────────────────────────────────
+  function showFallAlert(workerId) {
+    const alertBox = document.getElementById('fall-alert');
+    document.getElementById('fall-worker-id').textContent = workerId;
+    alertBox.classList.remove('hidden');
+    alertBox.classList.add('flex');
+    if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
+  }
 
-  // optional browser vibration (mobile)
-  if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
-}
+  function hideFallAlert() {
+    const alertBox = document.getElementById('fall-alert');
+    alertBox.classList.add('hidden');
+    alertBox.classList.remove('flex');
+  }
 
-function hideFallAlert() {
-  const alertBox = document.getElementById('fall-alert');
-  alertBox.classList.add('hidden');
-  alertBox.classList.remove('flex');
-}
+  // ── Clear UI ──────────────────────────────────────────────
   function clearAll() {
     document.getElementById('hr-value').textContent = '--';
     document.getElementById('hr-value').classList.remove('bpm-pulse');
@@ -567,8 +513,9 @@ function hideFallAlert() {
     document.getElementById('lat-val').textContent  = '--.------';
     document.getElementById('lng-val').textContent  = '---.------';
     document.getElementById('rssi-val').textContent = '-- dBm';
-    document.getElementById('gps-badge').className  = 'text-xs font-semibold px-2 py-0.5 rounded-full badge-unknown';
-    document.getElementById('gps-badge').textContent = 'No Fix';
+    const gpsBadge = document.getElementById('gps-badge');
+    gpsBadge.className  = 'text-xs font-semibold px-2 py-0.5 rounded-full badge-unknown';
+    gpsBadge.textContent = 'No Fix';
 
     document.getElementById('meta-id').textContent     = '--';
     document.getElementById('meta-uptime').textContent  = '--';
@@ -578,13 +525,12 @@ function hideFallAlert() {
     const mapBtn = document.getElementById('map-btn');
     mapBtn.disabled = true;
     mapBtn.className = 'flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition-all bg-zinc-800 text-zinc-500 cursor-not-allowed';
+    mapBtn.style.background = '';
 
-    // Reset chart
     bpmLabels.length = 0;
     bpmData.length   = 0;
     bpmChart.update();
 
-    // Reset map
     trailPoints = [];
     gpsPolyline.setLatLngs([]);
     if (gpsMarker) { map.removeLayer(gpsMarker); gpsMarker = null; }
@@ -598,30 +544,27 @@ function hideFallAlert() {
   function listenMain(workerId) {
     return db.ref(`workers/${workerId}`).on('value', snap => {
       const d = snap.val();
-      if (d?.fall === 1) {
-  showFallAlert(workerId);
-} else {
-  hideFallAlert();
-}
-      // FALL ALERT
-if (d?.fall === 1) {
-  showFallAlert(workerId);
-} else {
-  hideFallAlert();
-}
       if (!d) { setConnectionStatus(false); return; }
 
       lastDataTs = Date.now();
       setConnectionStatus(true);
 
+      // Fall detection
+      if (d.fall === 1) {
+        showFallAlert(workerId);
+      } else {
+        hideFallAlert();
+      }
+
+      // Timestamp
       const now = new Date();
       document.getElementById('time-val').textContent =
         now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-      // Heart Rate
+      // Heart rate
       if (d.sensors) {
-        const hr  = d.sensors.heartRate    ?? null;
-        const avg = d.sensors.heartRateRaw ?? null;
+        const hr  = d.sensors.heartRate       ?? null;
+        const avg = d.sensors.heartRateRaw    ?? null;
         const sts = d.sensors.heartRateStatus ?? 'unknown';
 
         const hrEl = document.getElementById('hr-value');
@@ -673,7 +616,7 @@ if (d?.fall === 1) {
     });
   }
 
-  // ── BPM history listener ─────────────────────────────────
+  // ── BPM history listener ──────────────────────────────────
   function listenBpmHistory(workerId) {
     return db.ref(`workers/${workerId}/history/bpm`)
       .orderByKey().limitToLast(MAX_BPM_POINTS)
@@ -691,7 +634,6 @@ if (d?.fall === 1) {
           bpmData.push(e.v);
         });
 
-        // Dynamic Y axis
         if (bpmData.length) {
           const mn = Math.min(...bpmData);
           const mx = Math.max(...bpmData);
@@ -723,49 +665,13 @@ if (d?.fall === 1) {
     if (mainListener) db.ref(`workers/${currentWorker}`).off('value', mainListener);
     if (bpmListener)  db.ref(`workers/${currentWorker}/history/bpm`).off('value', bpmListener);
     if (gpsListener)  db.ref(`workers/${currentWorker}/history/gps`).off('value', gpsListener);
-    if (watchdog) clearInterval(watchdog);
+    if (watchdog)     clearInterval(watchdog);
 
     currentWorker = workerId;
-    function showFallAlert(workerId) {
-  const alertBox = document.getElementById('fall-alert');
-  const workerEl = document.getElementById('fall-worker-id');
-
-  workerEl.textContent = workerId;
-  alertBox.classList.remove('hidden');
-  alertBox.classList.add('flex');
-
-  if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
-}
-
-function hideFallAlert() {
-  const alertBox = document.getElementById('fall-alert');
-  alertBox.classList.add('hidden');
-  alertBox.classList.remove('flex');
-}
-    function showFallAlert(workerId) {
-  const alertBox = document.getElementById('fall-alert');
-  const workerEl = document.getElementById('fall-worker-id');
-
-  workerEl.textContent = workerId;
-  alertBox.classList.remove('hidden');
-  alertBox.classList.add('flex');
-
-  if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
-}
-
-function hideFallAlert() {
-  const alertBox = document.getElementById('fall-alert');
-  alertBox.classList.add('hidden');
-  alertBox.classList.remove('flex');
-}
     clearAll();
+    hideFallAlert();
 
     mainListener = listenMain(workerId);
-    if (d?.fall === 1) {
-  showFallAlert(workerId);
-} else {
-  hideFallAlert();
-}
     bpmListener  = listenBpmHistory(workerId);
     gpsListener  = listenGpsHistory(workerId);
 
@@ -776,40 +682,25 @@ function hideFallAlert() {
     }, 5000);
   }
 
-  // ── Map button ────────────────────────────────────────────
+  // ── Button handlers (attached once) ──────────────────────
   document.getElementById('map-btn').addEventListener('click', () => {
     if (workerLat && workerLng)
       window.open(`https://www.google.com/maps?q=${workerLat},${workerLng}`, '_blank');
   });
-document.getElementById('dismiss-alert').addEventListener('click', hideFallAlert);
 
-document.getElementById('reset-fall').addEventListener('click', () => {
-  db.ref(`workers/${currentWorker}/fall`).set(0)
-    .then(() => {
-      hideFallAlert();
-      console.log('Fall status reset to 0');
-    })
-    .catch(err => {
-      console.error('Failed to reset fall:', err);
-    });
-});
-    document.getElementById('reset-fall').addEventListener('click', () => {
-  db.ref(`workers/${currentWorker}/fall`).set(0)
-    .then(() => {
-      hideFallAlert();
-      console.log('Fall status reset to 0');
-    })
-    .catch(err => {
-      console.error('Failed to reset fall:', err);
-    });
-});
-    document.getElementById('dismiss-alert').addEventListener('click', hideFallAlert);
-  // ── Worker dropdown ───────────────────────────────────────
+  document.getElementById('dismiss-alert').addEventListener('click', hideFallAlert);
+
+  document.getElementById('reset-fall').addEventListener('click', () => {
+    db.ref(`workers/${currentWorker}/fall`).set(0)
+      .then(() => hideFallAlert())
+      .catch(err => console.error('Failed to reset fall:', err));
+  });
+
   document.getElementById('worker-select').addEventListener('change', e => {
     listenToWorker(e.target.value);
   });
-document.getElementById('dismiss-alert').addEventListener('click', hideFallAlert);
-  // ── Boot ─────────────────────────────────────────────────
+
+  // ── Boot ──────────────────────────────────────────────────
   listenToWorker(currentWorker);
   </script>
 
