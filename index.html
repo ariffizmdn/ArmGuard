@@ -246,7 +246,36 @@
     Dismiss
   </button>
 </div>
+  <!-- FALL ALERT BANNER -->
+<div id="fall-alert"
+  class="max-w-6xl mx-auto mb-4 hidden items-center justify-between gap-4 px-5 py-4 rounded-2xl border border-red-500/30 bg-red-500/10 backdrop-blur-md fade-up">
 
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
+      <i data-lucide="triangle-alert" class="w-5 h-5 text-red-400"></i>
+    </div>
+
+    <div>
+      <p class="text-sm font-bold text-red-400 tracking-wide">EMERGENCY ALERT</p>
+      <p class="text-sm text-zinc-200">
+        Worker <span id="fall-worker-id" class="mono font-semibold text-white">--</span>
+        fall detected.
+      </p>
+    </div>
+  </div>
+
+ <div class="flex items-center gap-2">
+  <button id="reset-fall"
+    class="text-xs font-semibold px-3 py-2 rounded-lg bg-red-600 text-white hover:opacity-90 transition">
+    Reset Fall
+  </button>
+
+  <button id="dismiss-alert"
+    class="text-xs font-semibold px-3 py-2 rounded-lg bg-zinc-700 text-white hover:opacity-90 transition">
+    Dismiss
+  </button>
+</div>
+// 
   <!-- ── Main grid ───────────────────────────────────────────── -->
   <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 relative z-10">
 
@@ -569,6 +598,11 @@ function hideFallAlert() {
   function listenMain(workerId) {
     return db.ref(`workers/${workerId}`).on('value', snap => {
       const d = snap.val();
+      if (d?.fall === 1) {
+  showFallAlert(workerId);
+} else {
+  hideFallAlert();
+}
       // FALL ALERT
 if (d?.fall === 1) {
   showFallAlert(workerId);
@@ -692,9 +726,46 @@ if (d?.fall === 1) {
     if (watchdog) clearInterval(watchdog);
 
     currentWorker = workerId;
+    function showFallAlert(workerId) {
+  const alertBox = document.getElementById('fall-alert');
+  const workerEl = document.getElementById('fall-worker-id');
+
+  workerEl.textContent = workerId;
+  alertBox.classList.remove('hidden');
+  alertBox.classList.add('flex');
+
+  if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
+}
+
+function hideFallAlert() {
+  const alertBox = document.getElementById('fall-alert');
+  alertBox.classList.add('hidden');
+  alertBox.classList.remove('flex');
+}
+    function showFallAlert(workerId) {
+  const alertBox = document.getElementById('fall-alert');
+  const workerEl = document.getElementById('fall-worker-id');
+
+  workerEl.textContent = workerId;
+  alertBox.classList.remove('hidden');
+  alertBox.classList.add('flex');
+
+  if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
+}
+
+function hideFallAlert() {
+  const alertBox = document.getElementById('fall-alert');
+  alertBox.classList.add('hidden');
+  alertBox.classList.remove('flex');
+}
     clearAll();
 
     mainListener = listenMain(workerId);
+    if (d?.fall === 1) {
+  showFallAlert(workerId);
+} else {
+  hideFallAlert();
+}
     bpmListener  = listenBpmHistory(workerId);
     gpsListener  = listenGpsHistory(workerId);
 
@@ -710,7 +781,29 @@ if (d?.fall === 1) {
     if (workerLat && workerLng)
       window.open(`https://www.google.com/maps?q=${workerLat},${workerLng}`, '_blank');
   });
+document.getElementById('dismiss-alert').addEventListener('click', hideFallAlert);
 
+document.getElementById('reset-fall').addEventListener('click', () => {
+  db.ref(`workers/${currentWorker}/fall`).set(0)
+    .then(() => {
+      hideFallAlert();
+      console.log('Fall status reset to 0');
+    })
+    .catch(err => {
+      console.error('Failed to reset fall:', err);
+    });
+});
+    document.getElementById('reset-fall').addEventListener('click', () => {
+  db.ref(`workers/${currentWorker}/fall`).set(0)
+    .then(() => {
+      hideFallAlert();
+      console.log('Fall status reset to 0');
+    })
+    .catch(err => {
+      console.error('Failed to reset fall:', err);
+    });
+});
+    document.getElementById('dismiss-alert').addEventListener('click', hideFallAlert);
   // ── Worker dropdown ───────────────────────────────────────
   document.getElementById('worker-select').addEventListener('change', e => {
     listenToWorker(e.target.value);
