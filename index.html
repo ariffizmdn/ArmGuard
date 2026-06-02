@@ -172,7 +172,6 @@
 
 <body class="p-4 md:p-6 relative">
 
-  <!-- Header -->
   <header class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 fade-up">
     <div class="flex items-center gap-3">
       <div style="background:var(--accent)" class="p-2.5 rounded-xl">
@@ -201,7 +200,6 @@
     </div>
   </header>
 
-  <!-- Fall Alert Banner (single, correct definition) -->
   <div id="fall-alert"
     class="max-w-6xl mx-auto mb-4 hidden items-center justify-between gap-4 px-5 py-4 rounded-2xl border border-red-500/30 bg-red-500/10 backdrop-blur-md fade-up">
     <div class="flex items-center gap-3">
@@ -228,10 +226,30 @@
     </div>
   </div>
 
-  <!-- Main grid -->
+  <div id="hr-alert"
+    class="max-w-6xl mx-auto mb-4 hidden items-center justify-between gap-4 px-5 py-4 rounded-2xl border border-red-500/30 bg-red-500/10 backdrop-blur-md fade-up">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
+        <i data-lucide="activity" class="w-5 h-5 text-red-400"></i>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-red-400 tracking-wide">HEART RATE ALERT</p>
+        <p class="text-sm text-zinc-200">
+          Worker <span id="hr-worker-id" class="mono font-semibold text-white">--</span>
+          has critical heart rate: <span id="hr-alert-val" class="mono font-bold text-red-400">--</span> BPM.
+        </p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="dismiss-hr-alert"
+        class="text-xs font-semibold px-3 py-2 rounded-lg bg-zinc-700 text-white hover:opacity-90 transition">
+        Dismiss
+      </button>
+    </div>
+  </div>
+
   <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 relative z-10">
 
-    <!-- BPM Live Card -->
     <div class="card p-5 fade-up delay-1">
       <div class="card-accent-bar"></div>
       <div class="flex items-center justify-between mb-4">
@@ -254,7 +272,6 @@
       </div>
     </div>
 
-    <!-- GPS Card -->
     <div class="card p-5 fade-up delay-2">
       <div class="card-accent-bar" style="background:linear-gradient(90deg,#3b82f6,transparent)"></div>
       <div class="flex items-center justify-between mb-4">
@@ -284,7 +301,6 @@
       </div>
     </div>
 
-    <!-- Meta Card -->
     <div class="card p-5 fade-up delay-3">
       <div class="card-accent-bar" style="background:linear-gradient(90deg,#8b5cf6,transparent)"></div>
       <span class="section-label block mb-4">Device Info</span>
@@ -308,7 +324,6 @@
       </div>
     </div>
 
-    <!-- BPM Chart (spans 2 cols) -->
     <div class="card p-5 md:col-span-2 fade-up delay-2">
       <div class="card-accent-bar"></div>
       <div class="flex items-center justify-between mb-4">
@@ -320,7 +335,6 @@
       </div>
     </div>
 
-    <!-- GPS Map -->
     <div class="card p-5 fade-up delay-3">
       <div class="card-accent-bar" style="background:linear-gradient(90deg,#3b82f6,transparent)"></div>
       <div class="flex items-center justify-between mb-3">
@@ -351,8 +365,9 @@
   let watchdog      = null;
   let lastDataTs    = 0;
   let workerLat     = null;
-  let workerLng          = null;
-  let fallAlertDismissed = false; // cleared only by Reset Fall or worker switch
+  let workerLng     = null;
+  let fallAlertDismissed = false; 
+  let hrAlertDismissed = false;
 
   // ── BPM Chart ─────────────────────────────────────────────
   const MAX_BPM_POINTS = 30;
@@ -488,7 +503,7 @@
     el.textContent = status ? status.charAt(0).toUpperCase() + status.slice(1) : '--';
   }
 
-  // ── Fall alert helpers ────────────────────────────────────
+  // ── Alert helpers ─────────────────────────────────────────
   function showFallAlert(workerId) {
     const alertBox = document.getElementById('fall-alert');
     document.getElementById('fall-worker-id').textContent = workerId;
@@ -499,6 +514,21 @@
 
   function hideFallAlert() {
     const alertBox = document.getElementById('fall-alert');
+    alertBox.classList.add('hidden');
+    alertBox.classList.remove('flex');
+  }
+
+  function showHrAlert(workerId, bpm) {
+    const alertBox = document.getElementById('hr-alert');
+    document.getElementById('hr-worker-id').textContent = workerId;
+    document.getElementById('hr-alert-val').textContent = bpm;
+    alertBox.classList.remove('hidden');
+    alertBox.classList.add('flex');
+    if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
+  }
+
+  function hideHrAlert() {
+    const alertBox = document.getElementById('hr-alert');
     alertBox.classList.add('hidden');
     alertBox.classList.remove('flex');
   }
@@ -550,8 +580,7 @@
       lastDataTs = Date.now();
       setConnectionStatus(true);
 
-      // Fall detection — only show the alert, never auto-hide.
-      // The banner stays until the user clicks Reset or Dismiss.
+      // Fall detection
       if (d.fall === 1 && !fallAlertDismissed) {
         showFallAlert(workerId);
       }
@@ -561,10 +590,10 @@
       document.getElementById('time-val').textContent =
         now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-      // Heart rate
+      // Heart rate & Alerts
       if (d.sensors) {
-        const hr  = d.sensors.heartRate       ?? null;
-        const avg = d.sensors.heartRateRaw    ?? null;
+        const hr  = d.sensors.heartRate      ?? null;
+        const avg = d.sensors.heartRateRaw   ?? null;
         const sts = d.sensors.heartRateStatus ?? 'unknown';
 
         const hrEl = document.getElementById('hr-value');
@@ -573,6 +602,20 @@
         document.getElementById('hr-avg').textContent =
           avg !== null ? `${avg} BPM (raw)` : '-- BPM';
         setHrBadge(sts);
+
+        // Heart Rate Alert Logic
+        if (hr !== null) {
+          if (hr > 180 || hr < 30) {
+            if (!hrAlertDismissed) {
+              showHrAlert(workerId, hr);
+            } else {
+              document.getElementById('hr-alert-val').textContent = hr;
+            }
+          } else {
+            hrAlertDismissed = false;
+            hideHrAlert();
+          }
+        }
       }
 
       // Location
@@ -668,36 +711,35 @@
     if (watchdog)     clearInterval(watchdog);
 
     currentWorker      = workerId;
-    fallAlertDismissed = false; // new worker — allow alerts again
+    fallAlertDismissed = false; 
+    hrAlertDismissed   = false;
+    
     clearAll();
     hideFallAlert();
+    hideHrAlert();
 
     mainListener = listenMain(workerId);
     bpmListener  = listenBpmHistory(workerId);
     gpsListener  = listenGpsHistory(workerId);
 
-    // Watchdog — mark disconnected if no data for 20 s
+    // Watchdog
     watchdog = setInterval(() => {
       if (lastDataTs > 0 && Date.now() - lastDataTs > 20000)
         setConnectionStatus(false);
     }, 5000);
   }
 
-  // ── Button handlers (attached once) ──────────────────────
+  // ── Button handlers ───────────────────────────────────────
   document.getElementById('map-btn').addEventListener('click', () => {
     if (workerLat && workerLng)
       window.open(`https://www.google.com/maps?q=${workerLat},${workerLng}`, '_blank');
   });
 
-  // Dismiss: hides the banner but does NOT clear Firebase.
-  // The alert won't re-appear until the next worker switch.
   document.getElementById('dismiss-alert').addEventListener('click', () => {
     fallAlertDismissed = true;
     hideFallAlert();
   });
 
-  // Reset Fall: clears Firebase fall flag AND hides the banner.
-  // fallAlertDismissed stays false so a future fall can show again.
   document.getElementById('reset-fall').addEventListener('click', () => {
     db.ref(`workers/${currentWorker}/fall`).set(0)
       .then(() => {
@@ -705,6 +747,11 @@
         hideFallAlert();
       })
       .catch(err => console.error('Failed to reset fall:', err));
+  });
+
+  document.getElementById('dismiss-hr-alert').addEventListener('click', () => {
+    hrAlertDismissed = true;
+    hideHrAlert();
   });
 
   document.getElementById('worker-select').addEventListener('change', e => {
