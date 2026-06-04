@@ -605,7 +605,7 @@
 
         // Heart Rate Alert Logic
         if (hr !== null) {
-          if (hr > 180 || hr < 30) {
+          if (hr > 120|| hr < 70) {
             if (!hrAlertDismissed) {
               showHrAlert(workerId, hr);
             } else {
