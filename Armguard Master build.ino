@@ -44,12 +44,12 @@
   #include <HardwareSerial.h>
 #endif
 
-#define WIFI_SSID         "Musa"
-#define WIFI_PASSWORD     "kingmusa21"
-#define API_KEY           "AIzaSyCghIiXTJBovdmhlPNAktm5ufJlZ8zVlAg"
-#define DATABASE_URL      "https://smart-wearable-test1-default-rtdb.asia-southeast1.firebasedatabase.app/"
-#define USER_EMAIL        "ariff67@gmail.com"
-#define USER_PASSWORD     "Ariff123"
+#define WIFI_SSID         "Your Wifi_SSID"
+#define WIFI_PASSWORD     "Your Wifi Password"
+#define API_KEY           "Your Firebase API Key"
+#define DATABASE_URL      "Firebase Database Link"
+#define USER_EMAIL        "Your Email"
+#define USER_PASSWORD     "Email Password"
 #define WORKER_ID         "W001"
 
 #define NTP_SERVER        "pool.ntp.org"
