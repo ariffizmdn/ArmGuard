@@ -16,12 +16,11 @@ An edge-computing IoT safety wearable built for the **Integrated Design Project 
 - **Cloud & Alerts**: Firebase Realtime Database + Node.js Telegram Bot
 
 ## Files in This Repo
-- `firmware/` — ESP32-C3 C++ code & configuration files
-- `backend/` — Node.js script for Telegram Bot alerts
-- `web-dashboard/` — HTML/JS supervisor dashboard with live map
-- `hardware/` — Schematic diagrams & bill of materials (BOM)
-- `TECHNICAL REPORT IDP02.pdf` — Complete project technical report
-
+- `Armguard Master Build.ino` — Xiao ESP32-C3 C++ code & configuration files
+- `Tbot` — Node.js script for Telegram Bot alerts
+- `index.html` — HTML/JS supervisor dashboard with live map
+- `ArmGuard_BOM.xlsx` — Schematic diagrams & bill of materials (BOM)
+- 'Images' - Folder that contains related images
 ## Quick Test Results
 
 | Test Parameter | Result / Metric | Notes |
